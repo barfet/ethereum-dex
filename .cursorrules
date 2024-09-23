@@ -1,0 +1,411 @@
+# .cursorrules File for DEX Platform Implementation
+
+You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI, Supabase, and Tailwind.
+
+**Code Style and Structure**
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
+
+**Naming Conventions**
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for components.
+
+**TypeScript Usage**
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+
+**Syntax and Formatting**
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+**UI and Styling**
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+**Performance Optimization**
+- Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+- Wrap client components in Suspense with fallback.
+- Use dynamic loading for non-critical components.
+- Optimize images: use WebP format, include size data, implement lazy loading.
+
+**Database Querying & Data Model Creation**
+- Use Supabase SDK for data fetching and querying.
+- For data model creation, use Supabase's schema builder.
+
+**Key Conventions**
+- Use 'nuqs' for URL search parameter state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+- Limit 'use client':
+- Favor server components and Next.js SSR.
+- Use only for Web API access in small components.
+- Avoid for data fetching or state management.
+
+**Follow Next.js docs for Data Fetching, Rendering, and Routing.**
+
+## General Guidelines
+
+- **Language Selection**
+  - **Smart Contracts:** Use **Solidity** (version ^0.8.0).
+  - **Frontend Application:** Use **TypeScript** with **React.js** and **Next.js**.
+  - **Backend Services (Optional):** Use **TypeScript** with **Node.js** and **Express.js**.
+
+- **Code Style and Formatting**
+  - Follow the **Solidity Style Guide** for smart contracts.
+  - Adhere to the **Airbnb JavaScript Style Guide** for JavaScript/TypeScript code.
+  - Use **Prettier** and **ESLint** for consistent code formatting and linting.
+
+- **File Naming Conventions**
+  - Use **PascalCase** for Solidity contract files and TypeScript classes/interfaces.
+  - Use **camelCase** for variables and function names.
+  - Use **kebab-case** for file and folder names in the frontend and backend (e.g., `token-selector.tsx`).
+
+- **Commenting and Documentation**
+  - Use **NatSpec** comments for Solidity functions and contracts.
+  - Write JSDoc comments for TypeScript functions and classes.
+  - Provide meaningful comments explaining complex logic.
+  - Maintain updated **README.md** and **architecture.md** files in the `/docs` folder.
+
+---
+
+## Smart Contracts Rules
+
+- **Solidity Version**
+  - Specify the compiler version at the top of each file: `pragma solidity ^0.8.0;`
+
+- **Dependencies**
+  - Use **OpenZeppelin** contracts for standard implementations (e.g., `ERC20`, `Ownable`).
+
+- **Security Practices**
+  - Implement **reentrancy guards** where necessary using `ReentrancyGuard`.
+  - Use **SafeMath** for arithmetic operations, though Solidity ^0.8.0 has built-in overflow checks.
+  - Validate all external inputs and parameters.
+  - Restrict access to sensitive functions using modifiers like `onlyOwner`.
+
+- **Contract Structure**
+  - Organize contracts logically:
+    - **Interfaces** in `/contracts/interfaces`.
+    - **Libraries** in `/contracts/libraries`.
+    - **Core Contracts** in `/contracts/core`.
+    - **Token Contracts** in `/contracts/tokens`.
+
+- **Events**
+  - Emit events for critical actions (e.g., `Swap`, `Mint`, `Burn`).
+  - Define events with indexed parameters for efficient filtering.
+
+- **Testing**
+  - Write comprehensive unit tests in `/contracts/tests`.
+  - Cover all functions and edge cases.
+  - Use **Hardhat** and **Chai** for testing.
+
+---
+
+## Frontend Application Rules
+
+- **Frameworks and Libraries**
+  - Use **React.js** with **Next.js** for server-side rendering.
+  - Employ **Styled Components** or **Emotion** for CSS-in-JS styling.
+  - Use **Ethers.js** for blockchain interactions.
+
+- **State Management**
+  - Utilize **React Context API** or **Redux** for global state.
+  - Keep state immutable and pure where possible.
+
+- **Components**
+  - Organize components in `/frontend/components`.
+  - Components should be reusable and follow the **Single Responsibility Principle**.
+  - Name components with **PascalCase** (e.g., `SwapForm.tsx`).
+
+- **Hooks**
+  - Place custom hooks in `/frontend/hooks`.
+  - Prefix hook names with `use` (e.g., `useWallet`).
+
+- **Error Handling**
+  - Gracefully handle errors and provide user-friendly messages.
+  - Implement fallback UI components for error boundaries.
+
+- **Accessibility**
+  - Follow **WCAG** guidelines to ensure accessibility.
+  - Use semantic HTML elements and ARIA attributes.
+
+- **Testing**
+  - Write unit and integration tests using **Jest** and **React Testing Library**.
+  - Cover critical user interactions and component rendering.
+
+---
+
+## Backend Services Rules (Optional)
+
+- **Frameworks and Libraries**
+  - Use **Express.js** for building APIs.
+  - Use **TypeORM** or **Mongoose** for database interactions.
+
+- **API Design**
+  - Follow **RESTful** principles for API endpoints.
+  - Use **OpenAPI/Swagger** for API documentation.
+
+- **Security Practices**
+  - Sanitize all inputs to prevent injection attacks.
+  - Implement authentication and authorization where necessary.
+  - Use **HTTPS** and secure cookies.
+
+- **Data Handling**
+  - Store sensitive data securely using encryption.
+  - Comply with data protection regulations like GDPR.
+
+- **Testing**
+  - Write tests using **Mocha** or **Jest**.
+  - Cover controllers, services, and middleware functions.
+
+---
+
+## Folder Structure Guidelines
+
+- **Project Root**
+  - Place overarching configuration files like `.gitignore` and `README.md` in the root.
+  - Include a `/scripts` folder for deployment and setup scripts.
+
+- **Contracts Folder (`/contracts`)**
+  - Organize smart contracts into:
+    - `/interfaces`
+    - `/libraries`
+    - `/tokens`
+    - `/core`
+    - `/migrations`
+    - `/tests`
+
+- **Frontend Folder (`/frontend`)**
+  - Organize code into:
+    - `/components` - Reusable UI components.
+    - `/pages` - Next.js page components.
+    - `/contexts` - React Context providers.
+    - `/hooks` - Custom React hooks.
+    - `/services` - API and blockchain interaction services.
+    - `/styles` - Global and component-specific styles.
+    - `/utils` - Utility functions and constants.
+
+- **Backend Folder (`/backend`)** (Optional)
+  - Organize code into:
+    - `/src`
+      - `/controllers`
+      - `/models`
+      - `/routes`
+      - `/middlewares`
+      - `/services`
+    - `/tests`
+    - `/config`
+
+---
+
+## Naming Conventions
+
+- **Contracts and Classes**
+  - Use **PascalCase** (e.g., `Factory.sol`, `SwapForm.tsx`).
+
+- **Functions and Methods**
+  - Use **camelCase** (e.g., `createPair()`, `getReserves()`).
+
+- **Variables**
+  - Use **camelCase** for local and state variables.
+  - Use **ALL_CAPS_WITH_UNDERSCORES** for constants.
+
+- **Interfaces and Types**
+  - Prefix with `I` (e.g., `IFactory.sol`, `IUser.ts`).
+
+---
+
+## Coding Practices
+
+- **Modularity**
+  - Keep functions small and focused.
+  - Break down complex logic into helper functions.
+
+- **Reusability**
+  - Write generic components and functions that can be reused.
+
+- **Immutability**
+  - Favor immutable data structures and pure functions.
+
+- **Performance Optimization**
+  - Optimize smart contract functions to be gas-efficient.
+  - Avoid unnecessary state changes and external calls.
+
+- **Error Messages**
+  - Provide clear and descriptive error messages in require/assert statements.
+
+---
+
+## Security Best Practices
+
+- **Smart Contracts**
+  - Avoid using deprecated or unsafe Solidity features.
+  - Be cautious with external calls; use **checks-effects-interactions** pattern.
+  - Implement **circuit breakers** to halt operations in emergencies.
+
+- **Frontend and Backend**
+  - Protect against **Cross-Site Scripting (XSS)** attacks.
+  - Use **Content Security Policy (CSP)** headers.
+  - Validate and sanitize all user inputs on both client and server sides.
+
+---
+
+## Testing Guidelines
+
+- **Smart Contracts**
+  - Achieve high test coverage for all contracts.
+  - Test for both expected behavior and failure cases.
+  - Use mock contracts where necessary.
+
+- **Frontend**
+  - Write tests for components, hooks, and utilities.
+  - Test user interactions and state changes.
+  - Use **snapshot testing** for consistent UI rendering.
+
+- **Backend**
+  - Test API endpoints with various input scenarios.
+  - Ensure middleware functions correctly process requests and responses.
+
+---
+
+## Deployment and Environment
+
+- **Environment Variables**
+  - Use `.env` files for environment-specific configurations.
+  - Never commit `.env` files to version control.
+
+- **Deployment Scripts**
+  - Automate deployments using scripts in the `/scripts` folder.
+  - Include scripts for both development and production environments.
+
+- **Continuous Integration/Continuous Deployment (CI/CD)**
+  - Set up CI pipelines to run tests and linters on push.
+  - Automate deployments to staging and production environments.
+
+---
+
+## Documentation
+
+- **README.md**
+  - Provide an overview of the project.
+  - Include setup instructions and how to contribute.
+
+- **Architecture.md**
+  - Detail the architectural decisions and system design.
+
+- **API Documentation**
+  - Use Swagger or similar tools to document backend APIs.
+
+- **Code Comments**
+  - Explain the purpose of complex code blocks.
+  - Update comments when code changes.
+
+---
+
+## Collaboration Guidelines
+
+- **Version Control**
+  - Use **Git** for version control.
+  - Commit changes with clear and descriptive messages.
+
+- **Branching Strategy**
+  - Use feature branches (e.g., `feature/add-liquidity-form`).
+  - Merge changes through pull requests after code reviews.
+
+- **Code Reviews**
+  - Review code for correctness, style, and adherence to guidelines.
+  - Provide constructive feedback.
+
+---
+
+## AI Model Guidance
+
+- **Consistency**
+  - Ensure generated code follows the defined styles and conventions.
+  - Maintain consistency across different parts of the codebase.
+
+- **Clarity**
+  - Write code that is easy to understand and maintain.
+  - Avoid overly complex or nested logic when simpler solutions exist.
+
+- **Error Handling**
+  - Anticipate potential errors and handle them gracefully.
+  - Use try-catch blocks where appropriate.
+
+- **Avoid Code Duplication**
+  - Identify patterns and abstract them into reusable functions or components.
+
+---
+
+## Examples
+
+- **Smart Contract Function Skeleton**
+
+  ```solidity
+  // SPDX-License-Identifier: MIT
+  pragma solidity ^0.8.0;
+
+  import "./interfaces/IFactory.sol";
+
+  contract Factory is IFactory {
+      address public feeTo;
+      address public feeToSetter;
+
+      mapping(address => mapping(address => address)) public getPair;
+      address[] public allPairs;
+
+      event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
+
+      constructor(address _feeToSetter) {
+          feeToSetter = _feeToSetter;
+      }
+
+      function createPair(address tokenA, address tokenB) external returns (address pair) {
+          // Implementation
+      }
+
+      // Other functions...
+  }
+  ```
+
+- **React Component Skeleton**
+
+  ```tsx
+  import React, { useState, useContext } from 'react';
+  import { SwapFormProps } from '../utils/types';
+  import { useSwap } from '../hooks/useSwap';
+
+  const SwapForm: React.FC<SwapFormProps> = () => {
+      const [fromToken, setFromToken] = useState<Token>(defaultToken);
+      const [toToken, setToToken] = useState<Token>(defaultToken);
+      const [amountIn, setAmountIn] = useState<number>(0);
+      const [amountOut, setAmountOut] = useState<number>(0);
+
+      const { calculateAmountOut, executeSwap } = useSwap();
+
+      const handleSwap = async () => {
+          // Swap execution logic
+      };
+
+      return (
+          <div>
+              {/* UI Elements */}
+          </div>
+      );
+  };
+
+  export default SwapForm;
+  ```
+
+---
+
+## Conclusion
+
+By following the rules and guidelines specified in this `.cursorrules` file, AI models and developers can produce code that is consistent with the project's architectural vision and standards. This ensures a cohesive and maintainable codebase, facilitating efficient development and high-quality implementation of the decentralized exchange platform.
+
+---
+
+*This `.cursorrules` file is designed to guide AI models and developers in implementing the DEX platform, ensuring adherence to architectural standards, coding practices, and project structure for a clean and efficient codebase.*
