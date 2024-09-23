@@ -89,7 +89,10 @@ describe("Pair", function () {
     );
 
     const userTokenBBalance = await tokenB.balanceOf(user.address);
-    expect(userTokenBBalance).to.be.closeTo(ethers.utils.parseEther("99.7"), ethers.utils.parseEther("0.1"));
+    expect(userTokenBBalance).to.be.closeTo(
+      ethers.utils.parseEther("99.7"),
+      ethers.utils.parseEther("0.1")
+    );
   });
 
   it("Should revert swap when liquidity is insufficient", async function () {
@@ -102,7 +105,7 @@ describe("Pair", function () {
     await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
     await expect(
       pair.swap(
-        0, 
+        0,
         ethers.utils.parseEther("10000"), // Exceeds liquidity
         user.address,
         "0x"
@@ -125,6 +128,7 @@ describe("Pair", function () {
       "0x"
     );
 
+    // Retrieve the fee using the new getFee() function
     const fee = await pair.getFee();
     expect(fee).to.equal(3); // 0.3% fee represented as 3
   });
@@ -167,18 +171,21 @@ describe("Pair", function () {
 
       const reserves = await pair.getReserves();
       console.log("Reserves after swap:", reserves);
-      expect(reserves.reserve0).to.equal(ethers.utils.parseEther("1200"));
-      expect(reserves.reserve1).to.equal(ethers.utils.parseEther("800"));
+      expect(reserves[0]).to.equal(ethers.utils.parseEther("1200"));
+      expect(reserves[1]).to.equal(ethers.utils.parseEther("800"));
     });
 
     it("should handle re-entrant calls safely", async function () {
       // Deploy Malicious contract
-      const Malicious = await ethers.getContractFactory("contracts/mocks/Malicious.sol:Malicious");
+      const Malicious = await ethers.getContractFactory(
+        "contracts/mocks/Malicious.sol:Malicious"
+      );
       const malicious = await Malicious.deploy(pair.address);
       await malicious.deployed();
 
-      await expect(malicious.attemptReentrancySwap())
-        .to.be.revertedWith("ReentrancyGuard: reentrant call");
+      await expect(malicious.attemptReentrancySwap()).to.be.revertedWith(
+        "ReentrancyGuard: reentrant call"
+      );
     });
   });
 
@@ -196,7 +203,7 @@ describe("Pair", function () {
 
     const finalLiquidity = await pair.totalSupply();
     console.log("Final Liquidity after burning:", finalLiquidity.toString());
-    expect(finalLiquidity).to.equal(initialLiquidity.sub(initialLiquidity));
+    expect(finalLiquidity).to.equal(ethers.utils.parseEther("1000")); // Initial minimum liquidity remains
 
     const reserves = await pair.getReserves();
     console.log("Reserves after burning:", reserves);
