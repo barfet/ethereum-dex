@@ -33,11 +33,9 @@ contract Router is IRouter, ReentrancyGuard {
         address tokenB,
         uint256 amountADesired,
         uint256 amountBDesired,
-        uint256 amountAMin, // Unused parameter
-        uint256 amountBMin, // Unused parameter
         address to,
-        uint256 deadline // Unused parameter
-    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
+        uint256 deadline
+    ) external override returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         address pair = DexLibrary.pairFor(factory, tokenA, tokenB);
         IERC20(tokenA).transferFrom(msg.sender, pair, amountADesired);
         IERC20(tokenB).transferFrom(msg.sender, pair, amountBDesired);
@@ -58,10 +56,7 @@ contract Router is IRouter, ReentrancyGuard {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external override ensure(deadline) returns (
-        uint256 amountA,
-        uint256 amountB
-    ) {
+    ) external override ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = DexLibrary.pairFor(factory, tokenA, tokenB);
         IPair(pair).transferFrom(msg.sender, pair, liquidity);
         (amountA, amountB) = IPair(pair).burn(to);

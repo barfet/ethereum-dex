@@ -13,6 +13,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
  * @dev Pair contract to handle swaps and liquidity for a specific token pair
  */
 contract Pair is ERC20, IPair, ReentrancyGuard {
+    using SafeMath for uint256;
+
     address public override token0;
     address public override token1;
 
