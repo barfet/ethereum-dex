@@ -82,7 +82,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         address _token0 = token0;
         address _token1 = token1;
-        uint liquidity = balanceOf[msg.sender];
+        uint liquidity = balanceOf(msg.sender);
         require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_BURNED");
         uint balance0 = IERC20(_token0).balanceOf(address(this));
         uint balance1 = IERC20(_token1).balanceOf(address(this));
@@ -100,7 +100,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         }
 
         require(amount0 > 0 && amount1 > 0, "Pair: INSUFFICIENT_LIQUIDITY_BURNED");
-        _burn(msg.sender, liquidity);
+        super._burn(msg.sender, liquidity);
         IERC20(_token0).transfer(to, amount0);
         IERC20(_token1).transfer(to, amount1);
         balance0 = IERC20(_token0).balanceOf(address(this));
@@ -169,7 +169,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
      * @dev Internal function to mint liquidity tokens
      */
     function _mint(address to, uint256 liquidity) internal override {
-        _mint(to, liquidity);
+        super._mint(to, liquidity);
         emit Transfer(address(0), to, liquidity);
     }
 
@@ -177,7 +177,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
      * @dev Internal function to burn liquidity tokens
      */
     function _burn(address from, uint256 liquidity) internal override {
-        _burn(from, liquidity);
+        super._burn(from, liquidity);
         emit Transfer(from, address(0), liquidity);
     }
 
@@ -202,14 +202,5 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
      */
     function min(uint x, uint y) internal pure returns (uint z) {
         z = x < y ? x : y;
-    }
-
-    // Replace or add a separate mapping for balances if needed
-    // For example, if you need a separate balance tracking:
-    mapping(address => uint256) private _pairBalances;
-
-    // Update balance retrieval accordingly
-    function pairBalanceOf(address account) external view returns (uint256) {
-        return _pairBalances[account];
     }
 }

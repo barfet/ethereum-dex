@@ -31,17 +31,13 @@ contract Router is IRouter, ReentrancyGuard {
     function addLiquidity(
         address tokenA,
         address tokenB,
-        uint256 amountADesired,
-        uint256 amountBDesired,
-        uint256 amountAMin,
-        uint256 amountBMin,
+        uint256 amountADesired,    // Reintroduced parameter
+        uint256 amountBDesired,    // Reintroduced parameter
+        uint256 amountAMin,        // Existing parameter
+        uint256 amountBMin,        // Existing parameter
         address to,
         uint256 deadline
-    ) external override ensure(deadline) returns (
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidity
-    ) {
+    ) external override nonReentrant returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         address pair = DexLibrary.pairFor(factory, tokenA, tokenB);
         IERC20(tokenA).transferFrom(msg.sender, pair, amountADesired);
         IERC20(tokenB).transferFrom(msg.sender, pair, amountBDesired);
