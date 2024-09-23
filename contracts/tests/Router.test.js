@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect, anyValue } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Router", function () {
@@ -44,6 +44,8 @@ describe("Router", function () {
     await tokenA.connect(deployer).approve(router.address, ethers.utils.parseEther("1000"));
     await tokenB.connect(deployer).approve(router.address, ethers.utils.parseEther("1000"));
 
+    console.log("Adding liquidity: 1000 TKNA and 1000 TKNB");
+    
     // Add liquidity
     await expect(router.connect(deployer).addLiquidity(
       tokenA.address,
@@ -55,8 +57,9 @@ describe("Router", function () {
       deployer.address,
       Math.floor(Date.now() / 1000) + 60 * 20
     )).to.emit(pair, "Mint");
-
+    
     const deployerLPBalance = await pair.balanceOf(deployer.address);
+    console.log("Deployer LP Balance:", deployerLPBalance.toString());
     expect(deployerLPBalance).to.be.gt(0);
   });
 
@@ -75,9 +78,11 @@ describe("Router", function () {
       Math.floor(Date.now() / 1000) + 60 * 20
     );
 
+    console.log("Approving and performing token swap: 100 TKNA for 90 TKNB");
+
     // Approve tokens for swap
     await tokenA.connect(user).approve(router.address, ethers.utils.parseEther("100"));
-
+    
     // Perform swap
     await expect(router.connect(user).swapExactTokensForTokens(
       ethers.utils.parseEther("100"),
@@ -86,8 +91,9 @@ describe("Router", function () {
       user.address,
       Math.floor(Date.now() / 1000) + 60 * 20
     )).to.emit(pair, "Swap");
-
+    
     const userTokenBBalance = await tokenB.balanceOf(user.address);
+    console.log("User TKNB Balance after swap:", userTokenBBalance.toString());
     expect(userTokenBBalance).to.be.equal(ethers.utils.parseEther("90"));
   });
 
@@ -141,6 +147,12 @@ describe("Router", function () {
     
     const userBalance = await tokenB.balanceOf(user.address);
     expect(userBalance).to.be.gt(ethers.utils.parseEther("0"));
+  });
+
+  it("Should emit PairCreated event upon creating a new pair", async function () {
+    await expect(router.createPair(tokenA.address, tokenB.address))
+      .to.emit(factory, "PairCreated")
+      .withArgs(tokenA.address, tokenB.address, anyValue, anyValue); // Use anyValue for dynamic pair address and liquidity
   });
 
   describe("Router Security and Edge Cases", function () {

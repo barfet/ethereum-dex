@@ -58,27 +58,30 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     }
 
     /**
-     * @dev Mints liquidity tokens to the provider
+     * @dev Mints liquidity tokens to the provider and returns the added amounts and liquidity.
      */
-    function mint(address to) external nonReentrant returns (uint256 liquidity) {
+    function mint(address to) external override nonReentrant returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         uint balance0 = IERC20(token0).balanceOf(address(this));
         uint balance1 = IERC20(token1).balanceOf(address(this));
-        uint amount0 = balance0 - _reserve0;
-        uint amount1 = balance1 - _reserve1;
+        uint amount0 = balance0.sub(_reserve0);
+        uint amount1 = balance1.sub(_reserve1);
 
         if (totalSupply() == 0) {
-            liquidity = sqrt(amount0 * amount1);
-            require(liquidity > 0, "Insufficient liquidity minted");
-            _mint(address(0), 1000); // minimum liquidity
+            liquidity = sqrt(amount0.mul(amount1));
+            require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
+            _mint(address(0), 1000); // Minimum liquidity
         } else {
-            liquidity = min((amount0 * totalSupply()) / _reserve0, (amount1 * totalSupply()) / _reserve1);
-            require(liquidity > 0, "Insufficient liquidity minted");
+            liquidity = min(amount0.mul(totalSupply()).div(_reserve0), amount1.mul(totalSupply()).div(_reserve1));
+            require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
         }
 
         _mint(to, liquidity);
         _update(balance0, balance1, _reserve0, _reserve1);
         emit Mint(msg.sender, amount0, amount1);
+
+        // Return the added amounts and liquidity
+        return (amount0, amount1, liquidity);
     }
 
     /**

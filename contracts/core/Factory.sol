@@ -25,7 +25,7 @@ contract Factory is IFactory {
     /**
      * @dev Creates a new pair for the given two tokens
      */
-    function createPair(address tokenA, address tokenB) external override returns (address pair) {
+    function createPair(address tokenA, address tokenB) external returns (address pair) {
         require(tokenA != tokenB, "Factory: IDENTICAL_ADDRESSES");
         (address token0, address token1) = DexLibrary.sortTokens(tokenA, tokenB);
         require(token0 != address(0), "Factory: ZERO_ADDRESS");

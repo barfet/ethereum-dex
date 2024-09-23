@@ -3,10 +3,10 @@ const { ethers } = require("hardhat");
 
 describe("Pair", function () {
   let Factory, factory, Pair, pair;
-  let TokenA, tokenA, TokenB, tokenB, deployer;
+  let TokenA, tokenA, TokenB, tokenB, deployer, user;
 
   beforeEach(async function () {
-    [deployer] = await ethers.getSigners();
+    [deployer, user] = await ethers.getSigners();
 
     // Deploy Factory
     Factory = await ethers.getContractFactory("Factory");
@@ -106,5 +106,41 @@ describe("Pair", function () {
       await expect(malicious.attemptReentrancySwap())
         .to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
+  });
+
+  it("Should handle token swapping correctly", async function () {
+    console.log("Initializing Pair and adding initial liquidity");
+    await pair.initialize(tokenA.address, tokenB.address);
+    await pair.mint(deployer.address);
+
+    console.log("Performing token swap: 100 TKNA for 90 TKNB");
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("100"));
+    await pair.swap(ethers.utils.parseEther("100"), ethers.utils.parseEther("90"), user.address, "0x");
+
+    const reserves = await pair.getReserves();
+    console.log("Reserves after swap:", reserves);
+    expect(reserves.reserve0).to.equal(ethers.utils.parseEther("1100")); // Example value
+    expect(reserves.reserve1).to.equal(ethers.utils.parseEther("900"));  // Example value
+  });
+
+  it("Should provide and remove liquidity correctly", async function () {
+    console.log("Initializing Pair and adding liquidity");
+    await pair.initialize(tokenA.address, tokenB.address);
+    await pair.mint(deployer.address);
+    
+    const initialLiquidity = await pair.totalSupply();
+    console.log("Initial Liquidity:", initialLiquidity.toString());
+
+    console.log("Burning liquidity to remove it from the pool");
+    await pair.connect(deployer).burn(deployer.address);
+    
+    const finalLiquidity = await pair.totalSupply();
+    console.log("Final Liquidity after burning:", finalLiquidity.toString());
+    expect(finalLiquidity).to.equal(initialLiquidity.sub(initialLiquidity));
+    
+    const reserves = await pair.getReserves();
+    console.log("Reserves after burning:", reserves);
+    expect(reserves.reserve0).to.equal(0);
+    expect(reserves.reserve1).to.equal(0);
   });
 });

@@ -34,7 +34,7 @@ interface IPair is IERC20 {
 
     function initialize(address _token0, address _token1) external;
 
-    function mint(address to) external returns (uint256 liquidity);
+    function mint(address to) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
     function burn(address to) external returns (uint256 amount0, uint256 amount1);
     function swap(
         uint256 amount0Out,

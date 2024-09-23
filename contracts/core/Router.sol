@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * @title Router
  * @dev Router contract to facilitate token swaps and liquidity management
  */
-contract Router is IRouter, ReentrancyGuard {
+abstract contract Router is IRouter, ReentrancyGuard {
     address public immutable factory;
     address public immutable WETH;
 
@@ -33,16 +33,18 @@ contract Router is IRouter, ReentrancyGuard {
         address tokenB,
         uint256 amountADesired,
         uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
+    ) external override nonReentrant ensure(deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         address pair = DexLibrary.pairFor(factory, tokenA, tokenB);
         IERC20(tokenA).transferFrom(msg.sender, pair, amountADesired);
         IERC20(tokenB).transferFrom(msg.sender, pair, amountBDesired);
-        liquidity = IPair(pair).mint(to);
-        amountA = amountADesired;
-        amountB = amountBDesired;
-        // Handle slippage and adjust amounts if necessary
+        (amountA, amountB, liquidity) = IPair(pair).mint(to);
+        require(amountA >= amountAMin, "Router: INSUFFICIENT_A_AMOUNT");
+        require(amountB >= amountBMin, "Router: INSUFFICIENT_B_AMOUNT");
+        // Additional logic if necessary
     }
 
     /**
@@ -56,7 +58,7 @@ contract Router is IRouter, ReentrancyGuard {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external override ensure(deadline) returns (uint256 amountA, uint256 amountB) {
+    ) external override nonReentrant ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = DexLibrary.pairFor(factory, tokenA, tokenB);
         IPair(pair).transferFrom(msg.sender, pair, liquidity);
         (amountA, amountB) = IPair(pair).burn(to);
@@ -73,7 +75,7 @@ contract Router is IRouter, ReentrancyGuard {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external override nonReentrant ensure(deadline) returns (uint256[] memory amounts) {
         amounts = _getAmountsOut(amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, "Router: INSUFFICIENT_OUTPUT_AMOUNT");
         IERC20(path[0]).transferFrom(msg.sender, DexLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
@@ -89,7 +91,7 @@ contract Router is IRouter, ReentrancyGuard {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external override nonReentrant ensure(deadline) returns (uint256[] memory amounts) {
         amounts = _getAmountsIn(amountOut, path);
         require(amounts[0] <= amountInMax, "Router: EXCESSIVE_INPUT_AMOUNT");
         IERC20(path[0]).transferFrom(msg.sender, DexLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
@@ -135,13 +137,5 @@ contract Router is IRouter, ReentrancyGuard {
             (uint112 reserveIn, uint112 reserveOut) = DexLibrary.getReserves(factory, path[i - 1], path[i]);
             amounts[i - 1] = DexLibrary.getAmountIn(amounts[i], reserveIn, reserveOut);
         }
-    }
-
-    // Ensure that Router is not abstract by implementing all required functions
-
-    // Example: If Router was missing a function implementation, add it here
-    function exampleFunction() external override returns (bool) {
-        // Implementation details
-        return true;
     }
 }
