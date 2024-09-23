@@ -1,73 +1,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interfaces/IPair.sol"; // Ensure IPair is imported
-import "../core/Router.sol"; // Ensure Router is imported
+import "../core/Router.sol";
 
-contract MockReentrant {
-    Router public router; // Declare the router variable
-    IPair public pair; // Declare the pair variable
-    
-    // Declare token addresses if needed
-    address public tokenAAddress;
-    address public tokenBAddress;
+contract MaliciousReentrant {
+    Router public router;
+    bool public attackInitiated;
 
-    // Update constructor to accept both pair and router addresses
-    constructor(address pairAddress, address routerAddress) { 
-        pair = IPair(pairAddress);
-        router = Router(routerAddress); // Initialize the router
-    }
-
-    fallback() external payable {
-        if (address(router).balance >= 1 ether) {
-            // Provide the required 5 parameters for swapExactTokensForTokens
-            uint256 amountIn = 1 ether; // Example amount, adjust as needed
-            uint256 amountOutMin = 1 ether; // Example minimum amount out
-            address[] memory path = new address[](2);
-            path[0] = tokenAAddress; // Replace with TokenA's deployed address
-            path[1] = tokenBAddress; // Replace with TokenB's deployed address
-            address to = address(this); // Address to receive the output tokens
-            uint256 deadline = block.timestamp + 300; // 5 minutes from now
-
-            router.swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
-        }
+    constructor(address _router) {
+        router = Router(_router);
     }
 
     function attack() external {
-        // Provide the required 5 parameters for swapExactTokensForTokens
-        uint256 amountIn = 1 ether; // Example amount, adjust as needed
-        uint256 amountOutMin = 1 ether; // Example minimum amount out
-        address[] memory path = new address[](2);
-        path[0] = tokenAAddress; // Replace with TokenA's deployed address
-        path[1] = tokenBAddress; // Replace with TokenB's deployed address
-        address to = address(this); // Address to receive the output tokens
-        uint256 deadline = block.timestamp + 300; // 5 minutes from now
-
-        router.swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
+        require(!attackInitiated, "Attack already initiated");
+        attackInitiated = true;
+        router.swapExactTokensForTokens(
+            address(this),
+            address(0),
+            100 ether,
+            90 ether,
+            address(this),
+            block.timestamp + 1200
+        );
     }
 
-    // Add a receive function to handle incoming Ether
-    receive() external payable {}
-
-    // Update the attackSwap function with correct parameters
-    function attackSwap(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external {
-        router.swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
-    }
-
-    // Update the attackBurn function with correct parameters
-    function attackBurn(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external {
-        router.swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
+    // Fallback function to perform reentrancy
+    fallback() external payable {
+        if (attackInitiated) {
+            router.swapExactTokensForTokens(
+                address(this),
+                address(0),
+                100 ether,
+                90 ether,
+                address(this),
+                block.timestamp + 1200
+            );
+        }
     }
 }

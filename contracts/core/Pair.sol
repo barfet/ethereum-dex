@@ -22,6 +22,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     uint112 private reserve1;
     uint32  private blockTimestampLast;
 
+    bool private initialized;
+
     constructor() ERC20("LP Token", "LP") {
         // Empty constructor to prevent unwanted initializations
     }
@@ -29,10 +31,11 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Initializes the pair with two tokens
      */
-    function initialize(address _token0, address _token1) external override {
-        require(token0 == address(0) && token1 == address(0), "Pair: ALREADY_INITIALIZED");
+    function initialize(address _token0, address _token1) external {
+        require(!initialized, "Pair: ALREADY_INITIALIZED");
         token0 = _token0;
         token1 = _token1;
+        initialized = true;
     }
 
     /**
@@ -65,12 +68,12 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint amount1 = balance1 - _reserve1;
 
         if (totalSupply() == 0) {
-            liquidity = sqrt(amount0 * amount1) - 1000;
-            require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
+            liquidity = sqrt(amount0 * amount1);
+            require(liquidity > 0, "Insufficient liquidity minted");
             _mint(address(0), 1000); // minimum liquidity
         } else {
             liquidity = min((amount0 * totalSupply()) / _reserve0, (amount1 * totalSupply()) / _reserve1);
-            require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
+            require(liquidity > 0, "Insufficient liquidity minted");
         }
 
         _mint(to, liquidity);

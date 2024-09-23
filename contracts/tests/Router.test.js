@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("Router", function () {
   let Factory, factory, Router, router, Pair, pair;
-  let TokenA, tokenA, TokenB, tokenB, WETH, deployer, user;
+  let TokenA, tokenA, TokenB, tokenB, WETH, weth, deployer, user;
 
   beforeEach(async function () {
     [deployer, user] = await ethers.getSigners();
@@ -22,13 +22,14 @@ describe("Router", function () {
     tokenB = await TokenB.deploy("Token B", "TKNB", 18, ethers.utils.parseEther("1000000"));
     await tokenB.deployed();
 
-    // Deploy Router
-    const ERC20 = await ethers.getContractFactory("ERC20Token");
-    WETH = await ERC20.deploy("Wrapped Ether", "WETH", 18, ethers.utils.parseEther("1000000"));
-    await WETH.deployed();
+    // Deploy WETH
+    WETH = await ethers.getContractFactory("ERC20Token");
+    weth = await WETH.deploy("Wrapped Ether", "WETH", 18, ethers.utils.parseEther("1000000"));
+    await weth.deployed();
 
+    // Deploy Router
     Router = await ethers.getContractFactory("Router");
-    router = await Router.deploy(factory.address, WETH.address);
+    router = await Router.deploy(factory.address, weth.address);
     await router.deployed();
 
     // Create Pair
@@ -143,12 +144,14 @@ describe("Router", function () {
   });
 
   describe("Router Security and Edge Cases", function () {
-    // ... existing beforeEach
+    // ... existing beforeEach ...
 
     it("Should prevent reentrancy attacks during swap", async function () {
       // Implement a test using a malicious contract to attempt reentrancy
       // This requires deploying a malicious contract and attempting to exploit the router
       // Ensure that reentrancy guards are in place and prevent the attack
+      await expect(malicious.attemptReentrancySwap())
+        .to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
 
     it("Should revert when swapping with zero address", async function () {
@@ -162,6 +165,6 @@ describe("Router", function () {
         .to.be.revertedWith("Insufficient output amount");
     });
 
-    // ... other security tests
+    // ... other security tests ...
   });
 });
