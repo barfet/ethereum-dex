@@ -4,6 +4,12 @@ require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config(); // Add this line to load .env variables
 
 module.exports = {
+  paths: {
+    sources: "./contracts",
+    tests: "./contracts/tests",
+    cache: "./cache",
+    artifacts: "./artifacts"
+  },
   solidity: {
     compilers: [
       {
