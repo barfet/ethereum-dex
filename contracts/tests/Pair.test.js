@@ -94,4 +94,63 @@ describe("Pair", function () {
     // Implement fee calculation verification
     // This will depend on your fee structure implementation
   });
+
+  // {{ Add tests for burn function edge cases }}
+  describe("burn", () => {
+    it("should revert when burning more liquidity than balance", async () => {
+      await expect(pair.burn(deployer.address)).to.be.revertedWith("Pair: INSUFFICIENT_LIQUIDITY_BURNED");
+    });
+
+    it("should correctly burn liquidity and transfer tokens", async () => {
+      // Setup initial liquidity
+      await pair.initialize(tokenA.address, tokenB.address);
+      await pair.connect(deployer).mint(deployer.address);
+      
+      const initialBalanceA = await tokenA.balanceOf(deployer.address);
+      const initialBalanceB = await tokenB.balanceOf(deployer.address);
+      const initialLiquidity = await pair.balanceOf(deployer.address);
+
+      // Burn liquidity
+      await pair.connect(deployer).burn(deployer.address);
+
+      const finalBalanceA = await tokenA.balanceOf(deployer.address);
+      const finalBalanceB = await tokenB.balanceOf(deployer.address);
+      const finalLiquidity = await pair.balanceOf(deployer.address);
+
+      expect(finalLiquidity).to.equal(0);
+      expect(finalBalanceA).to.be.above(initialBalanceA);
+      expect(finalBalanceB).to.be.above(initialBalanceB);
+    });
+  });
+
+  // {{ Add tests for swap function scenarios }}
+  describe("swap", () => {
+    it("should revert when output amounts are insufficient", async () => {
+      await expect(pair.swap(0, 0, deployer.address, "0x")).to.be.revertedWith("Pair: INSUFFICIENT_OUTPUT_AMOUNT");
+    });
+
+    it("should execute swap correctly and update reserves", async () => {
+      // Setup initial liquidity and balances
+      await pair.initialize(tokenA.address, tokenB.address);
+      await pair.connect(deployer).mint(deployer.address);
+      await tokenA.transfer(pair.address, ethers.utils.parseEther("10"));
+      
+      const reserveBefore = await pair.getReserves();
+
+      // Perform swap
+      await pair.swap(ethers.utils.parseEther("5"), 0, user.address, "0x");
+
+      const reserveAfter = await pair.getReserves();
+      expect(reserveAfter.reserve0).to.equal(reserveBefore.reserve0 + 5);
+      expect(reserveAfter.reserve1).to.equal(reserveBefore.reserve1 - 5);
+    });
+
+    // Additional edge cases
+    it("should handle re-entrant calls safely", async () => {
+      // Attempt re-entrant swap using MockReentrant
+      const MockReentrant = await ethers.getContractFactory("MockReentrant");
+      const mockReentrant = await MockReentrant.deploy(pair.address);
+      await expect(mockReentrant.attackSwap()).to.be.revertedWith("ReentrancyGuard: reentrant call");
+    });
+  });
 });

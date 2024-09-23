@@ -48,4 +48,16 @@ describe("Reentrancy Attack Prevention", function () {
     // Attempt reentrancy attack
     await expect(mockReentrant.attack()).to.be.revertedWith("ReentrancyGuard: reentrant call");
   });
+
+  // {{ Add test for re-entrant mint function }}
+  it("should prevent re-entrant calls to mint", async () => {
+    const mockReentrant = await MockReentrant.deploy(pair.address);
+    await expect(mockReentrant.attackMint()).to.be.revertedWith("ReentrancyGuard: reentrant call");
+  });
+
+  // {{ Add test for re-entrant burn function }}
+  it("should prevent re-entrant calls to burn", async () => {
+    const mockReentrant = await MockReentrant.deploy(pair.address);
+    await expect(mockReentrant.attackBurn()).to.be.revertedWith("ReentrancyGuard: reentrant call");
+  });
 });
