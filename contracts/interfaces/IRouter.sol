@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title IRouter
  * @dev Interface for the Router contract
  */
 interface IRouter {
-    function factory() external pure returns (address);
-    function WETH() external pure returns (address);
+    function factory() external view returns (address);
+    function WETH() external view returns (address);
 
-    // Liquidity functions
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -21,7 +20,11 @@ interface IRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
+    ) external returns (
+        uint256 amountA,
+        uint256 amountB,
+        uint256 liquidity
+    );
 
     function removeLiquidity(
         address tokenA,
@@ -31,9 +34,11 @@ interface IRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB);
+    ) external returns (
+        uint256 amountA,
+        uint256 amountB
+    );
 
-    // Swap functions
     function swapExactTokensForTokens(
         uint256 amountIn,
         uint256 amountOutMin,

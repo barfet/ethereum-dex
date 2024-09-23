@@ -21,9 +21,9 @@ module.exports = {
     localhost: {
       url: "http://127.0.0.1:8545"
     },
-    // Example for Ropsten
-    ropsten: {
-      url: `https://ropsten.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+    // Example for Sepolia
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [`0x${process.env.PRIVATE_KEY}`]
     },
     // Add other networks as needed

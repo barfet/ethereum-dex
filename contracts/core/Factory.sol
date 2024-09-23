@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "../interfaces/IFactory.sol";
 import "../interfaces/IPair.sol";
 import "../libraries/DexLibrary.sol";
+import "../core/Pair.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Factory

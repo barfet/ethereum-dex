@@ -2,15 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IPair.sol";
-import "../interfaces/IERC20.sol";
 import "../libraries/DexLibrary.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Pair
  * @dev Pair contract to handle swaps and liquidity for a specific token pair
  */
-contract Pair is IPair, ReentrancyGuard {
+contract Pair is ERC20, IPair, ReentrancyGuard {
     address public override token0;
     address public override token1;
 
@@ -18,10 +19,7 @@ contract Pair is IPair, ReentrancyGuard {
     uint112 private reserve1;
     uint32  private blockTimestampLast;
 
-    uint256 public override totalSupply;
-    mapping(address => uint256) public override balanceOf;
-
-    constructor() {
+    constructor() ERC20("LP Token", "LP") {
         // Empty constructor to prevent unwanted initializations
     }
 
@@ -63,12 +61,12 @@ contract Pair is IPair, ReentrancyGuard {
         uint amount0 = balance0 - _reserve0;
         uint amount1 = balance1 - _reserve1;
 
-        if (totalSupply == 0) {
+        if (totalSupply() == 0) {
             liquidity = sqrt(amount0 * amount1) - 1000;
             require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
             _mint(address(0), 1000); // minimum liquidity
         } else {
-            liquidity = min((amount0 * totalSupply) / _reserve0, (amount1 * totalSupply) / _reserve1);
+            liquidity = min((amount0 * totalSupply()) / _reserve0, (amount1 * totalSupply()) / _reserve1);
             require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
         }
 
@@ -88,13 +86,13 @@ contract Pair is IPair, ReentrancyGuard {
         require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_BURNED");
         uint balance0 = IERC20(_token0).balanceOf(address(this));
         uint balance1 = IERC20(_token1).balanceOf(address(this));
-        uint amount0Optimal = (liquidity * _reserve0) / totalSupply;
-        uint amount1Optimal = (liquidity * _reserve1) / totalSupply;
+        uint amount0Optimal = (liquidity * _reserve0) / totalSupply();
+        uint amount1Optimal = (liquidity * _reserve1) / totalSupply();
         if (amount0Optimal > balance0) {
-            amount1 = (liquidity * _reserve1) / totalSupply;
+            amount1 = (liquidity * _reserve1) / totalSupply();
             amount0 = balance0;
         } else if (amount1Optimal > balance1) {
-            amount0 = (liquidity * _reserve0) / totalSupply;
+            amount0 = (liquidity * _reserve0) / totalSupply();
             amount1 = balance1;
         } else {
             amount0 = amount0Optimal;
@@ -170,18 +168,16 @@ contract Pair is IPair, ReentrancyGuard {
     /**
      * @dev Internal function to mint liquidity tokens
      */
-    function _mint(address to, uint256 liquidity) internal {
-        balanceOf[to] += liquidity;
-        totalSupply += liquidity;
+    function _mint(address to, uint256 liquidity) internal override {
+        _mint(to, liquidity);
         emit Transfer(address(0), to, liquidity);
     }
 
     /**
      * @dev Internal function to burn liquidity tokens
      */
-    function _burn(address from, uint256 liquidity) internal {
-        balanceOf[from] -= liquidity;
-        totalSupply -= liquidity;
+    function _burn(address from, uint256 liquidity) internal override {
+        _burn(from, liquidity);
         emit Transfer(from, address(0), liquidity);
     }
 
@@ -206,5 +202,14 @@ contract Pair is IPair, ReentrancyGuard {
      */
     function min(uint x, uint y) internal pure returns (uint z) {
         z = x < y ? x : y;
+    }
+
+    // Replace or add a separate mapping for balances if needed
+    // For example, if you need a separate balance tracking:
+    mapping(address => uint256) private _pairBalances;
+
+    // Update balance retrieval accordingly
+    function pairBalanceOf(address account) external view returns (uint256) {
+        return _pairBalances[account];
     }
 }

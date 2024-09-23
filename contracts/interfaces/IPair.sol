@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title IPair
@@ -31,6 +31,8 @@ interface IPair is IERC20 {
             uint112 reserve1,
             uint32 blockTimestampLast
         );
+
+    function initialize(address _token0, address _token1) external;
 
     function mint(address to) external returns (uint256 liquidity);
     function burn(address to) external returns (uint256 amount0, uint256 amount1);

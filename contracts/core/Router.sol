@@ -2,15 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IRouter.sol";
-import "../interfaces/IERC20.sol";
-import "../interfaces/IFactory.sol";
+import "../interfaces/IPair.sol";
 import "../libraries/DexLibrary.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Router
  * @dev Router contract to facilitate token swaps and liquidity management
  */
-contract Router is IRouter {
+contract Router is IRouter, ReentrancyGuard {
     address public immutable override factory;
     address public immutable override WETH;
 
@@ -47,8 +48,7 @@ contract Router is IRouter {
         liquidity = IPair(pair).mint(to);
         amountA = amountADesired;
         amountB = amountBDesired;
-        // Handle slippage
-        // Additional logic can be implemented here
+        // Handle slippage and adjust amounts if necessary
     }
 
     /**
