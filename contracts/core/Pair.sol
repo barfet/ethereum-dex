@@ -6,6 +6,7 @@ import "../libraries/DexLibrary.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * @title Pair
@@ -54,7 +55,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Mints liquidity tokens to the provider
      */
-    function mint(address to) external returns (uint liquidity) {
+    function mint(address to) external nonReentrant returns (uint256 liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         uint balance0 = IERC20(token0).balanceOf(address(this));
         uint balance1 = IERC20(token1).balanceOf(address(this));
@@ -78,7 +79,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Burns liquidity tokens and returns underlying tokens to the provider
      */
-    function burn(address to) external override nonReentrant returns (uint256 amount0, uint256 amount1) {
+    function burn(address to) external nonReentrant returns (uint256 amount0, uint256 amount1) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         address _token0 = token0;
         address _token1 = token1;
@@ -117,7 +118,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint256 amount1Out,
         address to,
         bytes calldata data
-    ) external override nonReentrant {
+    ) external nonReentrant {
         require(amount0Out > 0 || amount1Out > 0, "Pair: INSUFFICIENT_OUTPUT_AMOUNT");
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         require(amount0Out < _reserve0 && amount1Out < _reserve1, "Pair: INSUFFICIENT_LIQUIDITY");
@@ -151,7 +152,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Skims any excess tokens to the specified address
      */
-    function skim(address to) external override nonReentrant {
+    function skim(address to) external nonReentrant {
         address _token0 = token0;
         address _token1 = token1;
         IERC20(_token0).transfer(to, IERC20(_token0).balanceOf(address(this)) - reserve0);
@@ -161,7 +162,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Synchronizes the reserves with actual balances
      */
-    function sync() external override nonReentrant {
+    function sync() external nonReentrant {
         _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
     }
 

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../core/Router.sol";
-import "../interfaces/IPair.sol"; // Add this line to import the IPair interface
+import "../interfaces/IPair.sol"; // Ensure IPair is imported
+import "../core/Router.sol"; // Ensure Router is imported
 
 contract MockReentrant {
     Router public router; // Declare the router variable
     IPair public pair; // Declare the pair variable
     
-    // {{ Declare tokenAAddress and tokenBAddress }}
+    // Declare token addresses if needed
     address public tokenAAddress;
     address public tokenBAddress;
 
-    // {{ Update constructor to accept tokenA and tokenB addresses }}
-    constructor(address pairAddress, address routerAddress) { // Modify constructor to accept 'routerAddress'
+    // Update constructor to accept both pair and router addresses
+    constructor(address pairAddress, address routerAddress) { 
         pair = IPair(pairAddress);
         router = Router(routerAddress); // Initialize the router
     }

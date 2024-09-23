@@ -22,12 +22,16 @@ describe("Pair", function () {
     tokenB = await TokenB.deploy("Token B", "TKNB", 18, ethers.utils.parseEther("1000000"));
     await tokenB.deployed();
 
-    // Create Pair
+    // Create Pair via Factory
     await factory.createPair(tokenA.address, tokenB.address);
     const pairAddress = await factory.getPair(tokenA.address, tokenB.address);
 
-    Pair = await ethers.getContractFactory("Pair");
-    pair = await Pair.deploy(tokenA.address, tokenB.address); // Initialize 'pair'
+    // Remove the incorrect deployment with arguments
+    // Pair = await ethers.getContractFactory("Pair");
+    // pair = await Pair.deploy(tokenA.address, tokenB.address); // Remove this line
+
+    // Attach to the existing Pair contract
+    pair = await ethers.getContractAt("Pair", pairAddress); // Correctly attach to the deployed Pair
     await pair.deployed();
   });
 
@@ -148,7 +152,7 @@ describe("Pair", function () {
     it("should handle re-entrant calls safely", async () => {
       // Attempt re-entrant swap using MockReentrant
       const MockReentrant = await ethers.getContractFactory("MockReentrant");
-      const mockReentrant = await MockReentrant.deploy(pair.address);
+      const mockReentrant = await MockReentrant.deploy(pair.address, router.address); // Pass both pair and router addresses
       await expect(mockReentrant.attackSwap()).to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
   });

@@ -34,9 +34,9 @@ describe("Reentrancy Attack Prevention", function () {
     Pair = await ethers.getContractFactory("Pair");
     pair = await Pair.attach(pairAddress);
 
-    // Deploy MockReentrant
+    // Deploy MockReentrant with both pair and router addresses
     MockReentrant = await ethers.getContractFactory("MockReentrant");
-    mockReentrant = await MockReentrant.deploy(pair.address); // Pass required argument
+    mockReentrant = await MockReentrant.deploy(pair.address, router.address); // Pass both pair and router addresses
     await mockReentrant.deployed();
   });
 

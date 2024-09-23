@@ -47,21 +47,28 @@ describe("Factory", function () {
   it("Should not allow creating a pair that already exists", async function () {
     await factory.createPair(tokenA.address, tokenB.address);
     await expect(factory.createPair(tokenA.address, tokenB.address))
-      .to.be.revertedWith("Factory: PAIR_EXISTS"); // Update revert message
+      .to.be.revertedWith("Factory: PAIR_EXISTS"); // Updated revert message to match contract
   });
 
   it("Should prevent creating duplicate pairs", async function () {
     await factory.createPair(tokenA.address, tokenB.address);
-    await expect(factory.createPair(tokenA.address, tokenB.address)).to.be.revertedWith("Pair already exists");
+    await expect(factory.createPair(tokenA.address, tokenB.address))
+      .to.be.revertedWith("Factory: PAIR_EXISTS"); // Updated revert message to match contract
   });
 
   it("Should revert when creating a pair with zero address", async function () {
-    await expect(factory.createPair(ethers.constants.AddressZero, tokenB.address)).to.be.revertedWith("Invalid token address");
+    await expect(factory.createPair(ethers.constants.AddressZero, tokenB.address))
+      .to.be.revertedWith("DexLibrary: ZERO_ADDRESS"); // Updated revert message to match contract
   });
 
   it("Should emit PairCreated event upon creating a new pair", async function () {
     await expect(factory.createPair(tokenA.address, tokenB.address))
       .to.emit(factory, "PairCreated")
-      .withArgs(tokenA.address, tokenB.address, anyValue, anyValue);
+      .withArgs(
+        tokenA.address < tokenB.address ? tokenA.address : tokenB.address,
+        tokenA.address < tokenB.address ? tokenB.address : tokenA.address,
+        anyValue, // Using anyValue as a wildcard for the pair address
+        1 // allPairs.length after first pair creation
+      );
   });
 });
