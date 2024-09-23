@@ -1,0 +1,31 @@
+{
+    "name": "ethereum-dex",
+    "version": "1.0.0",
+    "description": "Decentralized Exchange (DEX) on Ethereum similar to Uniswap",
+    "main": "index.js",
+    "scripts": {
+      "test": "hardhat test",
+      "deploy": "hardhat run scripts/deploy.js --network localhost",
+      "lint": "eslint . --ext .js,.ts,.sol",
+      "compile": "hardhat compile",
+      "clean": "hardhat clean"
+    },
+    "author": "Your Name",
+    "license": "MIT",
+    "devDependencies": {
+      "@nomiclabs/hardhat-ethers": "^2.0.2",
+      "@nomiclabs/hardhat-waffle": "^2.0.1",
+      "@nomiclabs/hardhat-etherscan": "^3.1.0",
+      "chai": "^4.3.6",
+      "ethers": "^5.7.2",
+      "hardhat": "^2.12.2",
+      "eslint": "^8.40.0",
+      "eslint-config-prettier": "^8.8.0",
+      "eslint-plugin-prettier": "^4.2.1",
+      "prettier": "^2.8.8",
+      "dotenv": "^16.4.5"
+    },
+    "dependencies": {
+      "@openzeppelin/contracts": "^4.9.2"
+    }
+  }
