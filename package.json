@@ -8,7 +8,8 @@
       "deploy": "hardhat run scripts/deploy.js --network localhost",
       "lint": "eslint . --ext .js,.ts,.sol",
       "compile": "hardhat compile",
-      "clean": "hardhat clean"
+      "clean": "hardhat clean",
+      "coverage": "hardhat coverage"
     },
     "author": "Your Name",
     "license": "MIT",
@@ -23,7 +24,8 @@
       "eslint-config-prettier": "^8.8.0",
       "eslint-plugin-prettier": "^4.2.1",
       "prettier": "^2.8.8",
-      "dotenv": "^16.4.5"
+      "dotenv": "^16.4.5",
+      "solidity-coverage": "^0.7.16"
     },
     "dependencies": {
       "@openzeppelin/contracts": "^4.9.2"

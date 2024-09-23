@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Factory", function () {
-  let Factory, factory, TokenA, TokenB, tokenA, tokenB, deployer, user;
+  let Factory, factory, TokenA, tokenA, TokenB, tokenB, deployer, user;
 
   beforeEach(async function () {
     [deployer, user] = await ethers.getSigners();
@@ -13,11 +13,12 @@ describe("Factory", function () {
     await factory.deployed();
 
     // Deploy mock ERC20 tokens
-    const ERC20 = await ethers.getContractFactory("ERC20Token");
-    tokenA = await ERC20.deploy("Token A", "TKNA", 18, ethers.utils.parseEther("1000000"));
+    TokenA = await ethers.getContractFactory("ERC20Token");
+    tokenA = await TokenA.deploy("Token A", "TKNA", 18, ethers.utils.parseEther("1000000"));
     await tokenA.deployed();
 
-    tokenB = await ERC20.deploy("Token B", "TKNB", 18, ethers.utils.parseEther("1000000"));
+    TokenB = await ethers.getContractFactory("ERC20Token");
+    tokenB = await TokenB.deploy("Token B", "TKNB", 18, ethers.utils.parseEther("1000000"));
     await tokenB.deployed();
   });
 
@@ -45,5 +46,20 @@ describe("Factory", function () {
   it("Should not allow creating a pair that already exists", async function () {
     await factory.createPair(tokenA.address, tokenB.address);
     await expect(factory.createPair(tokenA.address, tokenB.address)).to.be.revertedWith("Factory: PAIR_EXISTS");
+  });
+
+  it("Should prevent creating duplicate pairs", async function () {
+    await factory.createPair(tokenA.address, tokenB.address);
+    await expect(factory.createPair(tokenA.address, tokenB.address)).to.be.revertedWith("Pair already exists");
+  });
+
+  it("Should revert when creating a pair with zero address", async function () {
+    await expect(factory.createPair(ethers.constants.AddressZero, tokenB.address)).to.be.revertedWith("Invalid token address");
+  });
+
+  it("Should emit PairCreated event upon creating a new pair", async function () {
+    await expect(factory.createPair(tokenA.address, tokenB.address))
+      .to.emit(factory, "PairCreated")
+      .withArgs(tokenA.address, tokenB.address, anyValue, anyValue);
   });
 });

@@ -66,4 +66,32 @@ describe("Pair", function () {
     const deployerBalance = await pair.balanceOf(deployer.address);
     expect(deployerBalance).to.equal(0);
   });
+
+  it("Should allow token swapping correctly", async function () {
+    // Approve and add liquidity
+    await tokenA.connect(deployer).approve(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.connect(deployer).approve(pair.address, ethers.utils.parseEther("1000"));
+    await pair.connect(deployer).mint(deployer.address);
+
+    // Approve Router to spend TokenA
+    await tokenA.connect(deployer).approve(router.address, ethers.utils.parseEther("100"));
+
+    // Perform swap
+    await expect(router.connect(user).swap(tokenA.address, tokenB.address, ethers.utils.parseEther("100"), 0, user.address))
+      .to.emit(pair, "Swap")
+      .withArgs(deployer.address, ethers.utils.parseEther("100"), 0, user.address);
+    
+    const userBalance = await tokenB.balanceOf(user.address);
+    expect(userBalance).to.be.gt(0);
+  });
+
+  it("Should revert swap when liquidity is insufficient", async function () {
+    await expect(router.connect(user).swap(tokenA.address, tokenB.address, ethers.utils.parseEther("100"), 0, user.address))
+      .to.be.revertedWith("Insufficient liquidity");
+  });
+
+  it("Should calculate fees correctly during swap", async function () {
+    // Implement fee calculation verification
+    // This will depend on your fee structure implementation
+  });
 });
