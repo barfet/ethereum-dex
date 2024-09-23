@@ -19,6 +19,10 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     uint112 private reserve1;
     uint32  private blockTimestampLast;
 
+    // Definition of fee constants
+    uint256 private constant FEE_NUMERATOR = 997;
+    uint256 private constant FEE_DENOMINATOR = 1000;
+
     constructor() ERC20("LP Token", "LP") {
         // Empty constructor to prevent unwanted initializations
     }
@@ -62,11 +66,11 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint amount1 = balance1 - _reserve1;
 
         if (totalSupply() == 0) {
-            liquidity = sqrt(amount0 * amount1) - 1000;
+            liquidity = DexLibrary.sqrt(amount0 * amount1) - 1000;
             require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
             _mint(address(0), 1000); // minimum liquidity
         } else {
-            liquidity = min((amount0 * totalSupply()) / _reserve0, (amount1 * totalSupply()) / _reserve1);
+            liquidity = DexLibrary.min((amount0 * totalSupply()) / _reserve0, (amount1 * totalSupply()) / _reserve1);
             require(liquidity > 0, "Pair: INSUFFICIENT_LIQUIDITY_MINTED");
         }
 
@@ -134,18 +138,51 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
             balance1 = IERC20(_token1).balanceOf(address(this));
         }
 
-        uint256 amount0In = balance0 > (_reserve0 - amount0Out) ? balance0 - (_reserve0 - amount0Out) : 0;
-        uint256 amount1In = balance1 > (_reserve1 - amount1Out) ? balance1 - (_reserve1 - amount1Out) : 0;
+        (uint256 amount0In, uint256 amount1In) = _calculateAmountsIn(_reserve0, _reserve1, amount0Out, amount1Out, balance0, balance1);
         require(amount0In > 0 || amount1In > 0, "Pair: INSUFFICIENT_INPUT_AMOUNT");
 
-        {
-            uint256 balance0Adjusted = (balance0 * 1000) - (amount0In * 3);
-            uint256 balance1Adjusted = (balance1 * 1000) - (amount1In * 3);
-            require(balance0Adjusted * balance1Adjusted >= uint(_reserve0) * uint(_reserve1) * (1000**2), "Pair: K");
-        }
+        _validateInvariant(_reserve0, _reserve1, balance0, balance1, amount0In, amount1In);
 
         _update(balance0, balance1, _reserve0, _reserve1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
+    }
+
+    /**
+     * @dev Calculates the input amounts based on reserves and output amounts
+     */
+    function _calculateAmountsIn(
+        uint112 _reserve0,
+        uint112 _reserve1,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        uint256 balance0,
+        uint256 balance1
+    ) internal pure returns (uint256 amount0In, uint256 amount1In) {
+        amount0In = balance0 > (_reserve0 - amount0Out) ? balance0 - (_reserve0 - amount0Out) : 0;
+        amount1In = balance1 > (_reserve1 - amount1Out) ? balance1 - (_reserve1 - amount1Out) : 0;
+    }
+
+    /**
+     * @dev Validates the constant product invariant after swap
+     */
+    function _validateInvariant(
+        uint112 _reserve0,
+        uint112 _reserve1,
+        uint256 balance0,
+        uint256 balance1,
+        uint256 amount0In,
+        uint256 amount1In
+    ) internal view {
+        uint256 feeAdjustedAmount0In = (amount0In * FEE_DENOMINATOR) / (FEE_DENOMINATOR - 3);
+        uint256 feeAdjustedAmount1In = (amount1In * FEE_DENOMINATOR) / (FEE_DENOMINATOR - 3);
+
+        uint256 balance0Adjusted = balance0 * FEE_DENOMINATOR - amount0In * (FEE_DENOMINATOR - 3);
+        uint256 balance1Adjusted = balance1 * FEE_DENOMINATOR - amount1In * (FEE_DENOMINATOR - 3);
+
+        require(
+            balance0Adjusted * balance1Adjusted >= uint(_reserve0) * uint(_reserve1) * (FEE_DENOMINATOR**2),
+            "Pair: K"
+        );
     }
 
     /**
@@ -179,28 +216,5 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     function _burn(address from, uint256 liquidity) internal override {
         super._burn(from, liquidity);
         emit Transfer(from, address(0), liquidity);
-    }
-
-    /**
-     * @dev Returns the square root of a number
-     */
-    function sqrt(uint y) internal pure returns (uint z) {
-        if (y > 3) {
-            z = y;
-            uint x = y / 2 + 1;
-            while (x < z) {
-                z = x;
-                x = (y / x + x) / 2;
-            }
-        } else if (y != 0) {
-            z = 1;
-        }
-    }
-
-    /**
-     * @dev Returns the minimum of two numbers
-     */
-    function min(uint x, uint y) internal pure returns (uint z) {
-        z = x < y ? x : y;
     }
 }

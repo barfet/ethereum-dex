@@ -61,4 +61,27 @@ library DexLibrary {
         uint256 denominator = (reserveOut - amountOut) * 997;
         amountIn = (numerator / denominator) + 1;
     }
+
+    /**
+     * @dev Returns the square root of a number
+     */
+    function sqrt(uint y) internal pure returns (uint z) {
+        if (y > 3) {
+            z = y;
+            uint x = y / 2 + 1;
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
+        } else if (y != 0) {
+            z = 1;
+        }
+    }
+
+    /**
+     * @dev Returns the minimum of two numbers
+     */
+    function min(uint x, uint y) internal pure returns (uint z) {
+        z = x < y ? x : y;
+    }
 }
