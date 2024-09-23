@@ -20,7 +20,11 @@ interface IRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
+    ) external returns (
+        uint256 amountA,
+        uint256 amountB,
+        uint256 liquidity
+    );
 
     function removeLiquidity(
         address tokenA,
@@ -30,7 +34,10 @@ interface IRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB);
+    ) external returns (
+        uint256 amountA,
+        uint256 amountB
+    );
 
     function swapExactTokensForTokens(
         uint256 amountIn,

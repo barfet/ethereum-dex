@@ -27,7 +27,7 @@ describe("Boundary Conditions", function () {
         await mockWETH.deployed();
 
         // Deploy Router
-        const Router = await ethers.getContractFactory("RouterImpl"); // Use RouterImpl if Router is abstract
+        const Router = await ethers.getContractFactory("Router"); // Deploy Router directly if not abstract
         router = await Router.deploy(factory.address, mockWETH.address);
         await router.deployed();
 
