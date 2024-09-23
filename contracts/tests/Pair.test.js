@@ -14,11 +14,11 @@ describe("Pair", function () {
     await factory.deployed();
 
     // Deploy mock ERC20 tokens
-    TokenA = await ethers.getContractFactory("ERC20Token");
+    TokenA = await ethers.getContractFactory("contracts/mocks/ERC20Token.sol:ERC20Token");
     tokenA = await TokenA.deploy("Token A", "TKNA", 18, ethers.utils.parseEther("1000000"));
     await tokenA.deployed();
 
-    TokenB = await ethers.getContractFactory("ERC20Token");
+    TokenB = await ethers.getContractFactory("contracts/mocks/ERC20Token.sol:ERC20Token");
     tokenB = await TokenB.deploy("Token B", "TKNB", 18, ethers.utils.parseEther("1000000"));
     await tokenB.deployed();
 
@@ -30,24 +30,39 @@ describe("Pair", function () {
   });
 
   it("Should initialize with correct tokens", async function () {
-    console.log("Pair token0 address:", await pair.token0());
-    console.log("Pair token1 address:", await pair.token1());
-    expect(await pair.token0()).to.equal(tokenA.address);
-    expect(await pair.token1()).to.equal(tokenB.address);
+    const token0 = await pair.token0();
+    const token1 = await pair.token1();
+
+    console.log("Pair token0 address:", token0);
+    console.log("Pair token1 address:", token1);
+
+    // Adjust expectations based on token addresses
+    if (tokenA.address.toLowerCase() < tokenB.address.toLowerCase()) {
+      expect(token0).to.equal(tokenA.address);
+      expect(token1).to.equal(tokenB.address);
+    } else {
+      expect(token0).to.equal(tokenB.address);
+      expect(token1).to.equal(tokenA.address);
+    }
   });
 
   it("Should mint liquidity correctly", async function () {
-    try {
-      await pair.mint(deployer.address);
-    } catch (error) {
-      console.error("Minting failed:", error);
-      throw error;
-    }
+    // Transfer tokens to the pair contract
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
+
+    // Mint liquidity
+    await pair.mint(deployer.address);
     const deployerLPBalance = await pair.balanceOf(deployer.address);
-    expect(deployerLPBalance).to.be.gt(0);
+    expect(deployerLPBalance).to.be.gt(ethers.utils.parseEther("0"));
   });
 
   it("Should burn liquidity correctly", async function () {
+    // Transfer tokens and mint liquidity first
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await pair.mint(deployer.address);
+
     try {
       await pair.burn(deployer.address);
     } catch (error) {
@@ -59,85 +74,130 @@ describe("Pair", function () {
   });
 
   it("Should allow token swapping correctly", async function () {
-    try {
-      await pair.swap(deployer.address, ethers.utils.parseEther("100"), ethers.utils.parseEther("0"));
-    } catch (error) {
-      console.error("Swapping failed:", error);
-      throw error;
-    }
-    const deployerTokenBBalance = await tokenB.balanceOf(deployer.address);
-    expect(deployerTokenBBalance).to.be.gt(ethers.utils.parseEther("0"));
+    // Transfer tokens and mint liquidity first
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await pair.mint(deployer.address);
+
+    // Perform swap: Swap 100 TKNA for approximately 99.7 TKNB (considering 0.3% fee)
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("100"));
+    await pair.swap(
+      0, // amount0Out
+      ethers.utils.parseEther("99.7"), // amount1Out
+      user.address,
+      "0x"
+    );
+
+    const userTokenBBalance = await tokenB.balanceOf(user.address);
+    expect(userTokenBBalance).to.be.closeTo(ethers.utils.parseEther("99.7"), ethers.utils.parseEther("0.1"));
   });
 
   it("Should revert swap when liquidity is insufficient", async function () {
-    await expect(pair.swap(deployer.address, ethers.utils.parseEther("1000"), ethers.utils.parseEther("0")))
-      .to.be.revertedWith("Insufficient liquidity");
+    // Transfer tokens and mint liquidity first
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await pair.mint(deployer.address);
+
+    // Attempt to swap more liquidity than available
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await expect(
+      pair.swap(
+        0, 
+        ethers.utils.parseEther("10000"), // Exceeds liquidity
+        user.address,
+        "0x"
+      )
+    ).to.be.revertedWith("Pair: INSUFFICIENT_LIQUIDITY");
   });
 
   it("Should calculate fees correctly during swap", async function () {
-    // Implement fee calculation logic
+    // Transfer tokens and mint liquidity first
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await pair.mint(deployer.address);
+
+    // Perform swap
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("100"));
+    await pair.swap(
+      0,
+      ethers.utils.parseEther("99.7"),
+      user.address,
+      "0x"
+    );
+
     const fee = await pair.getFee();
-    expect(fee).to.equal(ethers.utils.parseEther("0.003")); // Example fee
+    expect(fee).to.equal(3); // 0.3% fee represented as 3
   });
 
   describe("burn", function () {
     it("should correctly burn liquidity and transfer tokens", async function () {
+      // Transfer tokens and mint liquidity first
+      await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+      await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
       await pair.mint(deployer.address);
+
       const liquidity = await pair.balanceOf(deployer.address);
       await pair.burn(deployer.address);
       const deployerLPBalance = await pair.balanceOf(deployer.address);
       expect(deployerLPBalance).to.equal(0);
-      // Additional assertions for token balances
+
+      // Check token balances
+      const finalTokenABalance = await tokenA.balanceOf(deployer.address);
+      const finalTokenBBalance = await tokenB.balanceOf(deployer.address);
+      expect(finalTokenABalance).to.equal(ethers.utils.parseEther("1000000"));
+      expect(finalTokenBBalance).to.equal(ethers.utils.parseEther("1000000"));
     });
   });
 
   describe("swap", function () {
     it("should execute swap correctly and update reserves", async function () {
+      // Transfer tokens and mint liquidity first
+      await tokenA.transfer(pair.address, ethers.utils.parseEther("1100"));
+      await tokenB.transfer(pair.address, ethers.utils.parseEther("900"));
       await pair.mint(deployer.address);
-      await pair.swap(deployer.address, ethers.utils.parseEther("100"), ethers.utils.parseEther("0"));
+
+      // Perform swap
+      await tokenA.transfer(pair.address, ethers.utils.parseEther("100"));
+      await pair.swap(
+        0,
+        ethers.utils.parseEther("99.7"),
+        user.address,
+        "0x"
+      );
+
       const reserves = await pair.getReserves();
       console.log("Reserves after swap:", reserves);
-      expect(reserves.reserve0).to.be.gt(0);
-      expect(reserves.reserve1).to.be.gt(0);
+      expect(reserves.reserve0).to.equal(ethers.utils.parseEther("1200"));
+      expect(reserves.reserve1).to.equal(ethers.utils.parseEther("800"));
     });
 
     it("should handle re-entrant calls safely", async function () {
-      // Implement re-entrancy test
+      // Deploy Malicious contract
+      const Malicious = await ethers.getContractFactory("contracts/mocks/Malicious.sol:Malicious");
+      const malicious = await Malicious.deploy(pair.address);
+      await malicious.deployed();
+
       await expect(malicious.attemptReentrancySwap())
         .to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
   });
 
-  it("Should handle token swapping correctly", async function () {
-    console.log("Initializing Pair and adding initial liquidity");
-    await pair.initialize(tokenA.address, tokenB.address);
-    await pair.mint(deployer.address);
-
-    console.log("Performing token swap: 100 TKNA for 90 TKNB");
-    await tokenA.transfer(pair.address, ethers.utils.parseEther("100"));
-    await pair.swap(ethers.utils.parseEther("100"), ethers.utils.parseEther("90"), user.address, "0x");
-
-    const reserves = await pair.getReserves();
-    console.log("Reserves after swap:", reserves);
-    expect(reserves.reserve0).to.equal(ethers.utils.parseEther("1100")); // Example value
-    expect(reserves.reserve1).to.equal(ethers.utils.parseEther("900"));  // Example value
-  });
-
   it("Should provide and remove liquidity correctly", async function () {
-    console.log("Initializing Pair and adding liquidity");
-    await pair.initialize(tokenA.address, tokenB.address);
+    // Transfer tokens and mint liquidity first
+    await tokenA.transfer(pair.address, ethers.utils.parseEther("1000"));
+    await tokenB.transfer(pair.address, ethers.utils.parseEther("1000"));
     await pair.mint(deployer.address);
-    
+
     const initialLiquidity = await pair.totalSupply();
     console.log("Initial Liquidity:", initialLiquidity.toString());
 
-    console.log("Burning liquidity to remove it from the pool");
-    await pair.connect(deployer).burn(deployer.address);
-    
+    // Burn liquidity to remove it from the pool
+    await pair.burn(deployer.address);
+
     const finalLiquidity = await pair.totalSupply();
     console.log("Final Liquidity after burning:", finalLiquidity.toString());
     expect(finalLiquidity).to.equal(initialLiquidity.sub(initialLiquidity));
-    
+
     const reserves = await pair.getReserves();
     console.log("Reserves after burning:", reserves);
     expect(reserves.reserve0).to.equal(0);
