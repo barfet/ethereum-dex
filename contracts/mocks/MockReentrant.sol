@@ -2,19 +2,20 @@
 pragma solidity ^0.8.0;
 
 import "../core/Router.sol";
+import "../interfaces/IPair.sol"; // Add this line to import the IPair interface
 
 contract MockReentrant {
-    Router public router;
+    Router public router; // Declare the router variable
+    IPair public pair; // Declare the pair variable
     
     // {{ Declare tokenAAddress and tokenBAddress }}
     address public tokenAAddress;
     address public tokenBAddress;
 
     // {{ Update constructor to accept tokenA and tokenB addresses }}
-    constructor(address _router, address _tokenA, address _tokenB) {
-        router = Router(_router);
-        tokenAAddress = _tokenA;
-        tokenBAddress = _tokenB;
+    constructor(address pairAddress, address routerAddress) { // Modify constructor to accept 'routerAddress'
+        pair = IPair(pairAddress);
+        router = Router(routerAddress); // Initialize the router
     }
 
     fallback() external payable {

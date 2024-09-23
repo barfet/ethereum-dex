@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs"); // Add this line
 
 describe("Factory", function () {
   let Factory, factory, TokenA, tokenA, TokenB, tokenB, deployer, user;
@@ -45,7 +46,8 @@ describe("Factory", function () {
 
   it("Should not allow creating a pair that already exists", async function () {
     await factory.createPair(tokenA.address, tokenB.address);
-    await expect(factory.createPair(tokenA.address, tokenB.address)).to.be.revertedWith("Factory: PAIR_EXISTS");
+    await expect(factory.createPair(tokenA.address, tokenB.address))
+      .to.be.revertedWith("Factory: PAIR_EXISTS"); // Update revert message
   });
 
   it("Should prevent creating duplicate pairs", async function () {

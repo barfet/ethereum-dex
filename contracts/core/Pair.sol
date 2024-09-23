@@ -54,7 +54,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Mints liquidity tokens to the provider
      */
-    function mint(address to) external override nonReentrant returns (uint256 liquidity) {
+    function mint(address to) external returns (uint liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         uint balance0 = IERC20(token0).balanceOf(address(this));
         uint balance1 = IERC20(token1).balanceOf(address(this));

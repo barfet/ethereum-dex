@@ -27,14 +27,13 @@ describe("Pair", function () {
     const pairAddress = await factory.getPair(tokenA.address, tokenB.address);
 
     Pair = await ethers.getContractFactory("Pair");
-    pair = await Pair.attach(pairAddress);
+    pair = await Pair.deploy(tokenA.address, tokenB.address); // Initialize 'pair'
+    await pair.deployed();
   });
 
-  it("Should initialize with correct tokens", async function () {
-    const token0 = await pair.token0();
-    const token1 = await pair.token1();
-    expect(token0).to.equal(tokenA.address);
-    expect(token1).to.equal(tokenB.address);
+  it("Should initialize with correct tokens", async () => {
+    expect(await pair.token0()).to.equal(tokenA.address); // Ensure correct token0
+    expect(await pair.token1()).to.equal(tokenB.address); // Ensure correct token1
   });
 
   it("Should mint liquidity correctly", async function () {
