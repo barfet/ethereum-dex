@@ -13,16 +13,19 @@ using SafeMath for uint256;
 /**
  * @title Pair
  * @dev Pair contract to handle swaps and liquidity for a specific token pair
+ * This contract implements the core functionality of a decentralized exchange (DEX) pair,
+ * including liquidity provision, token swaps, and fee collection.
  */
 contract Pair is ERC20, IPair, ReentrancyGuard {
     address public override token0;
     address public override token1;
 
-    uint112 private reserve0; // Uses single storage slot, accessible via getReserves
+    // These variables use a single storage slot for gas efficiency
+    uint112 private reserve0;
     uint112 private reserve1;
     uint32 private blockTimestampLast;
 
-    // Definition of fee constants
+    // Constants for fee calculation and minimum liquidity
     uint256 private constant FEE_NUMERATOR = 997; // Represents a 0.3% fee (1000 - 997 = 3)
     uint256 private constant FEE_DENOMINATOR = 1000;
     uint256 private constant MINIMUM_LIQUIDITY = 1000;
@@ -33,6 +36,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Initializes the pair with two tokens
+     * @param _token0 Address of the first token
+     * @param _token1 Address of the second token
      */
     function initialize(address _token0, address _token1) external override {
         require(
@@ -44,7 +49,10 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     }
 
     /**
-     * @dev Returns the current reserves of the pair
+     * @dev Returns the current reserves of the pair and the last block timestamp
+     * @return reserve0 The current reserve of token0
+     * @return reserve1 The current reserve of token1
+     * @return blockTimestampLast The timestamp of the last block when reserves were updated
      */
     function getReserves()
         public
@@ -61,12 +69,16 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Updates the reserves based on the current balances
+     * @param balance0 The new balance of token0
+     * @param balance1 The new balance of token1
+     * @param _reserve0 The old reserve of token0 (unused)
+     * @param _reserve1 The old reserve of token1 (unused)
      */
     function _update(
         uint balance0,
         uint balance1,
-        uint112, // _reserve0 (unused)
-        uint112  // _reserve1 (unused)
+        uint112 _reserve0,
+        uint112 _reserve1
     ) private {
         require(
             balance0 <= type(uint112).max && balance1 <= type(uint112).max,
@@ -81,6 +93,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Mints liquidity tokens to the provider
+     * @param to Address to receive the minted liquidity tokens
+     * @return liquidity Amount of liquidity tokens minted
      */
     function mint(address to)
         external
@@ -95,14 +109,15 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint amount1 = balance1 - _reserve1;    
 
         if (totalSupply() == 0) {
-            // Replace Math.sqrt with DexLibrary.sqrt
+            // Initial liquidity provision
             liquidity = DexLibrary.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
             require(
                 liquidity > 0,
                 "Pair: INSUFFICIENT_LIQUIDITY_MINTED"
             );
-            _mint(address(this), MINIMUM_LIQUIDITY); // Minimum liquidity minted to the Pair contract itself
+            _mint(address(this), MINIMUM_LIQUIDITY); // Lock minimum liquidity to prevent division by zero
         } else {
+            // Subsequent liquidity provisions
             liquidity = DexLibrary.min(
                 (amount0 * totalSupply()) / _reserve0,
                 (amount1 * totalSupply()) / _reserve1
@@ -120,6 +135,9 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Burns liquidity tokens and returns underlying tokens to the provider
+     * @param to Address to receive the underlying tokens
+     * @return amount0 Amount of token0 returned
+     * @return amount1 Amount of token1 returned
      */
     function burn(address to)
         external
@@ -139,6 +157,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint balance1 = IERC20(_token1).balanceOf(address(this));
         uint amount0Optimal = (liquidity * _reserve0) / totalSupply();
         uint amount1Optimal = (liquidity * _reserve1) / totalSupply();
+        
+        // Determine the actual amounts to be returned based on available balances
         if (amount0Optimal > balance0) {
             amount1 = (liquidity * _reserve1) / totalSupply();
             amount0 = balance0;
@@ -165,6 +185,10 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Swaps tokens within the pair
+     * @param amount0Out Amount of token0 to be sent out
+     * @param amount1Out Amount of token1 to be sent out
+     * @param to Address to receive the swapped tokens
+     * @param data Additional data for flash swaps (if any)
      */
     function swap(
         uint256 amount0Out,
@@ -233,6 +257,14 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Calculates the input amounts based on reserves and output amounts
+     * @param _reserve0 Current reserve of token0
+     * @param _reserve1 Current reserve of token1
+     * @param amount0Out Amount of token0 to be sent out
+     * @param amount1Out Amount of token1 to be sent out
+     * @param balance0 New balance of token0 after swap
+     * @param balance1 New balance of token1 after swap
+     * @return amount0In Amount of token0 received
+     * @return amount1In Amount of token1 received
      */
     function _calculateAmountsIn(
         uint112 _reserve0,
@@ -248,6 +280,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Validates the constant product invariant after swap
+     * Ensures that the product of adjusted balances is greater than or equal to the product of reserves
+     * This check maintains the price curve and prevents manipulation
      */
     function _validateInvariant(
         uint112 _reserve0,
@@ -268,6 +302,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Skims any excess tokens to the specified address
+     * This function can be used to recover any tokens sent to the contract by mistake
+     * @param to Address to receive the excess tokens
      */
     function skim(address to) external override nonReentrant {
         address _token0 = token0;
@@ -284,6 +320,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Synchronizes the reserves with actual balances
+     * This function can be called to ensure the contract's state matches its actual token balances
      */
     function sync() external override nonReentrant {
         _update(
@@ -296,6 +333,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Internal function to mint liquidity tokens
+     * @param to Address to receive the minted tokens
+     * @param liquidity Amount of liquidity tokens to mint
      */
     function _mint(address to, uint256 liquidity) internal override {
         require(
@@ -308,6 +347,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Internal function to burn liquidity tokens
+     * @param from Address from which to burn tokens
+     * @param liquidity Amount of liquidity tokens to burn
      */
     function _burn(address from, uint256 liquidity) internal override {
         require(
@@ -320,6 +361,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
 
     /**
      * @dev Returns the fee applied to swaps
+     * @return The fee numerator, representing a 0.3% fee
      */
     function getFee() external view returns (uint256) {
         return FEE_NUMERATOR; // Represents a 0.3% fee
