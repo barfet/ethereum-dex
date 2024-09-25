@@ -11,12 +11,12 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 interface IFactory {
     /**
      * @dev Emitted when a new trading pair is created.
-     * @param token0 The address of the first token in the pair.
-     * @param token1 The address of the second token in the pair.
-     * @param pair The address of the newly created pair contract.
-     * @param The fourth parameter is likely the total number of pairs after creation (unnamed in the event).
+     * @param token0 Address of the first token in the pair
+     * @param token1 Address of the second token in the pair
+     * @param pair Address of the newly created pair contract
+     * @param totalPairs Total number of pairs after this creation
      */
-    event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
+    event PairCreated(address indexed token0, address indexed token1, address pair, uint256 totalPairs);
 
     /**
      * @dev Returns the address that receives the protocol fees.
@@ -52,10 +52,10 @@ interface IFactory {
     function allPairsLength() external view returns (uint256);
 
     /**
-     * @dev Creates a new trading pair for two given tokens.
-     * @param tokenA The address of the first token.
-     * @param tokenB The address of the second token.
-     * @return pair The address of the newly created trading pair contract.
+     * @dev Creates a new pair for two tokens if it doesn't exist yet.
+     * @param tokenA The address of the first token
+     * @param tokenB The address of the second token
+     * @return pair The address of the created or existing pair
      */
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
