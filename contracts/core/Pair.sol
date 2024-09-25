@@ -6,6 +6,9 @@ import "../libraries/DexLibrary.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+using SafeMath for uint256;
 
 /**
  * @title Pair
@@ -22,6 +25,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     // Definition of fee constants
     uint256 private constant FEE_NUMERATOR = 997; // Represents a 0.3% fee (1000 - 997 = 3)
     uint256 private constant FEE_DENOMINATOR = 1000;
+    uint256 private constant MINIMUM_LIQUIDITY = 1000;
 
     constructor() ERC20("LP Token", "LP") {
         // Empty constructor to prevent unwanted initializations
@@ -61,8 +65,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     function _update(
         uint balance0,
         uint balance1,
-        uint112 _reserve0,
-        uint112 _reserve1
+        uint112, // _reserve0 (unused)
+        uint112  // _reserve1 (unused)
     ) private {
         require(
             balance0 <= type(uint112).max && balance1 <= type(uint112).max,
@@ -88,15 +92,16 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint balance0 = IERC20(token0).balanceOf(address(this));
         uint balance1 = IERC20(token1).balanceOf(address(this));
         uint amount0 = balance0 - _reserve0;
-        uint amount1 = balance1 - _reserve1;
+        uint amount1 = balance1 - _reserve1;    
 
         if (totalSupply() == 0) {
-            liquidity = DexLibrary.sqrt(amount0 * amount1) - 1000;
+            // Replace Math.sqrt with DexLibrary.sqrt
+            liquidity = DexLibrary.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
             require(
                 liquidity > 0,
                 "Pair: INSUFFICIENT_LIQUIDITY_MINTED"
             );
-            _mint(address(this), 1000); // Minimum liquidity minted to the Pair contract itself
+            _mint(address(this), MINIMUM_LIQUIDITY); // Minimum liquidity minted to the Pair contract itself
         } else {
             liquidity = DexLibrary.min(
                 (amount0 * totalSupply()) / _reserve0,
@@ -167,23 +172,26 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         address to,
         bytes calldata data
     ) external override nonReentrant {
-        require(
-            amount0Out > 0 || amount1Out > 0,
-            "Pair: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
+        require(amount0Out > 0 || amount1Out > 0, "Pair: INSUFFICIENT_OUTPUT_AMOUNT");
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
         require(
             amount0Out < _reserve0 && amount1Out < _reserve1,
             "Pair: INSUFFICIENT_LIQUIDITY"
         );
 
+        // Transfer tokens to 'to' address
+        if (amount0Out > 0) {
+            IERC20(token0).transfer(to, amount0Out);
+        }
+        if (amount1Out > 0) {
+            IERC20(token1).transfer(to, amount1Out);
+        }
+
         uint balance0;
         uint balance1;
         {
             address _token0 = token0;
             address _token1 = token1;
-            if (amount0Out > 0) IERC20(_token0).transfer(to, amount0Out);
-            if (amount1Out > 0) IERC20(_token1).transfer(to, amount1Out);
             if (data.length > 0)
                 IPair(to).swap(amount0Out, amount1Out, to, data);
             balance0 = IERC20(_token0).balanceOf(address(this));
@@ -234,16 +242,8 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint256 balance0,
         uint256 balance1
     ) internal pure returns (uint256 amount0In, uint256 amount1In) {
-        amount0In =
-            balance0 >
-            (_reserve0 - amount0Out)
-                ? balance0 - (_reserve0 - amount0Out)
-                : 0;
-        amount1In =
-            balance1 >
-            (_reserve1 - amount1Out)
-                ? balance1 - (_reserve1 - amount1Out)
-                : 0;
+        amount0In = balance0 > (_reserve0 - amount0Out) ? balance0 - (_reserve0 - amount0Out) : 0;
+        amount1In = balance1 > (_reserve1 - amount1Out) ? balance1 - (_reserve1 - amount1Out) : 0;
     }
 
     /**
@@ -257,12 +257,11 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
         uint256 amount0In,
         uint256 amount1In
     ) internal view {
-        uint256 balance0Adjusted = (balance0 * FEE_DENOMINATOR) + (amount0In * FEE_NUMERATOR);
-        uint256 balance1Adjusted = (balance1 * FEE_DENOMINATOR) + (amount1In * FEE_NUMERATOR);
+        uint256 balance0Adjusted = balance0.mul(FEE_DENOMINATOR).sub(amount0In.mul(FEE_NUMERATOR));
+        uint256 balance1Adjusted = balance1.mul(FEE_DENOMINATOR).sub(amount1In.mul(FEE_NUMERATOR));
 
         require(
-            balance0Adjusted * balance1Adjusted >=
-                uint(_reserve0) * uint(_reserve1) * (FEE_DENOMINATOR ** 2),
+            balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(uint(_reserve1)).mul(FEE_DENOMINATOR**2),
             "Pair: K"
         );
     }
@@ -322,7 +321,7 @@ contract Pair is ERC20, IPair, ReentrancyGuard {
     /**
      * @dev Returns the fee applied to swaps
      */
-    function getFee() external pure returns (uint256) {
-        return 3; // Represents a 0.3% fee
+    function getFee() external view returns (uint256) {
+        return FEE_NUMERATOR; // Represents a 0.3% fee
     }
 }

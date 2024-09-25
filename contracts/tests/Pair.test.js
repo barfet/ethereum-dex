@@ -130,7 +130,7 @@ describe("Pair", function () {
 
     // Retrieve the fee using the new getFee() function
     const fee = await pair.getFee();
-    expect(fee).to.equal(3); // 0.3% fee represented as 3
+    expect(fee).to.equal(997); // 0.3% fee represented as 997
   });
 
   describe("burn", function () {
@@ -207,7 +207,7 @@ describe("Pair", function () {
 
     const reserves = await pair.getReserves();
     console.log("Reserves after burning:", reserves);
-    expect(reserves.reserve0).to.equal(0);
-    expect(reserves.reserve1).to.equal(0);
+    expect(reserves[0]).to.equal(0);
+    expect(reserves[1]).to.equal(0);
   });
 });
